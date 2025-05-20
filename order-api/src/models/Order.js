@@ -41,8 +41,7 @@ const OrderSchema = new mongoose.Schema({
   },
   totalAmount: {
     type: Number,
-    required: true,
-    min: 0,
+    min: 0, // Removed required: true
   },
   shippingAddress: {
     street: { type: String, required: true },
@@ -81,9 +80,9 @@ const OrderSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Calculate total amount before saving
+// Calculate total amount before saving if not provided
 OrderSchema.pre('save', function(next) {
-  if (this.isModified('items')) {
+  if (this.isModified('items') && !this.totalAmount) {
     this.totalAmount = this.items.reduce((total, item) => {
       return total + (item.price * item.quantity);
     }, 0);

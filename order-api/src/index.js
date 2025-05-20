@@ -27,8 +27,9 @@ async function connectRabbitMQ() {
 
 async function connectMongoDB() {
   try {
-    await mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true });
-    logger.info('Connected to MongoDB');
+    mongoose.connect(MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+    .then(() => logger.info('MongoDB connected'))
+    .catch(err => logger.error(err));
   } catch (error) {
     logger.error('Failed to connect to MongoDB:', error);
     process.exit(1);
@@ -45,11 +46,20 @@ app.post('/orders', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Calculate totalAmount
+    const totalAmount = items.reduce((total, item) => {
+      if (!item.price || !item.quantity) {
+        throw new Error('Item price or quantity missing');
+      }
+      return total + (item.price * item.quantity);
+    }, 0);
+
     const order = new Order({
       customerId,
       customerEmail,
       items,
       shippingAddress,
+      totalAmount,
       status: 'CREATED',
       paymentStatus: 'PENDING'
     });
