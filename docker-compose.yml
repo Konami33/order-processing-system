@@ -1,0 +1,68 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:1.26.0
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - order-api
+    networks:
+      - order-network
+
+  order-api:
+    build:
+      context: ./order-api
+      dockerfile: Dockerfile
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/orders_db
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - NODE_ENV=development
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - order-network
+
+  order-processor:
+    build:
+      context: ./order-processor
+      dockerfile: Dockerfile
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/orders_db
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - NODE_ENV=development
+    depends_on:
+      - mongodb
+      - rabbitmq
+    networks:
+      - order-network
+
+  mongodb:
+    image: mongo:7.0.12
+    environment:
+      - MONGO_INITDB_DATABASE=orders_db
+    volumes:
+      - mongodb_data:/data/db
+    ports:
+      - "27017:27017"
+    command: mongod --replSet rs0
+    networks:
+      - order-network
+
+  rabbitmq:
+    image: rabbitmq:3.13.7-management
+    ports:
+      - "5672:5672"
+      - "15672:15672" # Management UI
+    networks:
+      - order-network
+
+volumes:
+  mongodb_data:
+
+networks:
+  order-network:
+    driver: bridge
