@@ -4,7 +4,7 @@ services:
   nginx:
     image: nginx:1.26.0
     ports:
-      - "8080:80"
+      - "8081:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
@@ -60,10 +60,10 @@ services:
       - MONGO_INITDB_DATABASE=orders_db
     volumes:
       - mongodb_data:/data/db
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - ./mongodb-init.sh:/docker-entrypoint-initdb.d/mongodb-init.sh
     ports:
       - "27017:27017"
-    command: mongod --replSet rs0
+    command: ["/docker-entrypoint-initdb.d/mongodb-init.sh"]
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
