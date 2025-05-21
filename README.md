@@ -8,18 +8,11 @@ This is a simple order processing system that allows you to create orders and ge
 
 For decoupling the two components, used RabbitMQ to send messages between the two components.
 
-Here is the flow of the system:
+System Architecture:
 
-
-
-![](./asset/systemDesign.drawio%20(1).svg)
-
+![](./asset/systemDesign.drawio%20(1)%20copy.svg)
 
 ## Setup
-
-MongoDB requires a replica set for production-like behavior. Initialize it after starting Docker Compose.
-
-Steps:
 
 Start Docker Compose:
 
@@ -27,25 +20,10 @@ Start Docker Compose:
 docker-compose up -d
 ```
 
-Access the MongoDB container:
+Check the status of the containers:
 
 ```bash
-docker exec -it order-processing-system-mongodb-1 mongosh
-```
-
-Initialize the replica set:
-
-```javascript
-rs.initiate({
-  _id: "rs0",
-  members: [{ _id: 0, host: "mongodb:27017" }]
-});
-```
-
-Verify the replica set:
-
-```javascript
-rs.status();
+docker-compose ps
 ```
 
 ## Test the System
@@ -82,6 +60,10 @@ Get order details:
 ```bash
 curl http://localhost:8081/orders/<order_id> | jq
 ```
+
+Trace Output:
+
+![alt text](image.png)
 
 
 
