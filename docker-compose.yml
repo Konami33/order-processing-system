@@ -4,11 +4,12 @@ services:
   nginx:
     image: nginx:1.26.0
     ports:
-      - "8081:80"
+      - "8080:80"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - order-api
+      order-api:
+        condition: service_healthy
     networks:
       - order-network
 
@@ -17,12 +18,21 @@ services:
       context: ./order-api
       dockerfile: Dockerfile
     environment:
-      - MONGO_URI=mongodb://mongodb:27017/orders_db
+      - MONGO_URI=mongodb://mongodb:27017/orders_db?replicaSet=rs0
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - NODE_ENV=development
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    volumes:
+      - ./order-api/logs:/app/logs
     networks:
       - order-network
 
@@ -31,12 +41,16 @@ services:
       context: ./order-processor
       dockerfile: Dockerfile
     environment:
-      - MONGO_URI=mongodb://mongodb:27017/orders_db
+      - MONGO_URI=mongodb://mongodb:27017/orders_db?replicaSet=rs0
       - RABBITMQ_URL=amqp://rabbitmq:5672
       - NODE_ENV=development
     depends_on:
-      - mongodb
-      - rabbitmq
+      mongodb:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    volumes:
+      - ./order-processor/logs:/app/logs
     networks:
       - order-network
 
@@ -46,9 +60,15 @@ services:
       - MONGO_INITDB_DATABASE=orders_db
     volumes:
       - mongodb_data:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     ports:
       - "27017:27017"
     command: mongod --replSet rs0
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     networks:
       - order-network
 
@@ -56,7 +76,7 @@ services:
     image: rabbitmq:3.13.7-management
     ports:
       - "5672:5672"
-      - "15672:15672" # Management UI
+      - "15672:15672"
     networks:
       - order-network
 
