@@ -1,3 +1,5 @@
+require('./tracing');
+
 const express = require('express');
 const { connectMongoDB } = require('./services/mongodb.service');
 const { connectRabbitMQ } = require('./services/rabbitmq.service');

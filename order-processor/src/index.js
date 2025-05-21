@@ -1,3 +1,4 @@
+require('./tracing');
 const { connectMongoDB } = require('./services/mongodb.service');
 const { connectRabbitMQ } = require('./services/rabbitmq.service');
 const { processOrderMessage } = require('./consumers/order.consumer');

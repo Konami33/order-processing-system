@@ -1,6 +1,7 @@
 const amqp = require('amqplib');
 const logger = require('../utils/logger');
 const config = require('../config');
+const { context, propagation } = require('@opentelemetry/api');
 
 let channel;
 
@@ -21,7 +22,12 @@ async function publishMessage(message) {
   if (!channel) {
     throw new Error('RabbitMQ channel not initialized');
   }
-  channel.sendToQueue(config.queueName, Buffer.from(JSON.stringify(message)), { persistent: true });
+  const headers = {};
+  propagation.inject(context.active(), headers);
+  channel.sendToQueue(config.queueName, Buffer.from(JSON.stringify(message)), {
+    persistent: true,
+    headers,
+  });
   logger.info(`Published message to ${config.queueName}: ${JSON.stringify(message)}`);
 }
 
