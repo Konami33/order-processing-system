@@ -27,7 +27,7 @@ services:
       mongodb:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       tempo:
         condition: service_started
     healthcheck:
@@ -54,7 +54,7 @@ services:
       mongodb:
         condition: service_healthy
       rabbitmq:
-        condition: service_started
+        condition: service_healthy
       tempo:
         condition: service_started
     volumes:
@@ -85,6 +85,11 @@ services:
     ports:
       - "5672:5672"
       - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 20s
+      timeout: 10s
+      retries: 5
     networks:
       - order-network
 
